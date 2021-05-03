@@ -1,0 +1,11 @@
+*.o
+*.Po
+*.pyc
+*.wav
+*.png
+autom4te.cache
+*.lo
+*.Plo
+temp_file
+models
+LPCNet
