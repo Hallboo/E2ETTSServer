@@ -29,7 +29,7 @@ import tornado.concurrent
 # import tornado.options
 #import tornado.gen
 
-from worker import TacotronLPCNetWorker
+# from worker import TacotronLPCNetWorker
 
 class WorkerLoop(threading.Thread):
     def __init__(self, application):
@@ -46,9 +46,18 @@ class WorkerLoop(threading.Thread):
                 logging.info("%s: pop text start generate : %s" % (one_request.name, one_request.text))
                 # TODO if socket closed, skip the request
                 #sample_r, wave = self.worker.tts(one_request.text, one_request.name)
-                wav_path = self.worker.Text2Speech(one_request.text, one_request.name)
-                logging.info("%s: generate audio: %s" % (one_request.name, wav_path))
-                one_request.socket.send_audio(one_request, wav_path)
+                try:
+                    wav_path = self.worker.Text2Speech(one_request.text, one_request.name)
+                    logging.info("%s: generate audio: %s" % (one_request.name, wav_path))
+                    one_request.socket.send_audio(one_request, wav_path)
+
+                except KeyboardInterrupt:
+                    sys.exit(1)
+
+                except Exception as e:
+                    logging.info(e)
+                    one_request.socket.close()
+
             else:
                 time.sleep(0.1)
                 # print('Worker Play.')
@@ -67,6 +76,11 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **settings)
 
         # tts component
+        if config['worker'] == "worker":
+            from worker import TacotronLPCNetWorker
+        else:
+            from worker2 import TacotronLPCNetWorker
+
         self.worker = TacotronLPCNetWorker(config)
         
         # jobs sequense, all client instance
@@ -132,7 +146,7 @@ class ClientSocketHandler(tornado.websocket.WebSocketHandler):
             self.application.jobs.append(req)
 
 def main():    
-    logging.basicConfig(level=logging.DEBUG, format="%(levelname)8s %(asctime)s %(message)s ")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)8s %(asctime)s %(message)s ")
     logging.debug('Starting Up TTS Server')
     logging.debug('Based on ESPNET and LPCNet')
 
