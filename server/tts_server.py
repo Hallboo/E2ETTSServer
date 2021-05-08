@@ -3,7 +3,7 @@
 
 # ENV: python3
 # Zhang Haobo
-# Mar 13, 2020
+# May 8, 2021
 # speech synthesis demo server
 # Acoustic Model: Tacotron2 trained by ESPNet
 # Vocoder Model: LPCNet
@@ -59,7 +59,8 @@ class WorkerLoop(threading.Thread):
                     one_request.socket.close()
 
             else:
-                time.sleep(0.1)
+                pass
+                # time.sleep(0.1)
                 # print('Worker Play.')
 
 class Application(tornado.web.Application):
