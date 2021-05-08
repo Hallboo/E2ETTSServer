@@ -10,7 +10,7 @@ dict_path: models/espnet_taco_lpcnet_from_yizhou/train_units.txt
 threshold: 0.5
 minlenratio: 0.0
 maxlenratio: 10.0
-worker: worker2
+worker: worker
 acoustic_model_path: models/espnet_taco_lpcnet_from_yizhou/results/model.last1.avg.best
 
 vocoder_path: LPCNet/lpcnet_demo
