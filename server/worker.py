@@ -7,6 +7,7 @@
 import os
 import re
 import sys
+import time
 
 import yaml
 import logging
@@ -26,6 +27,8 @@ from argparse import Namespace
 from espnet.asr.asr_utils import get_model_conf
 from espnet.asr.asr_utils import torch_load
 from espnet.utils.dynamic_import import dynamic_import
+
+import frontend
 
 with open('config/config.yaml', 'r', encoding = 'utf-8') as fp:
     config = yaml.safe_load(fp)
@@ -70,7 +73,7 @@ class TacotronLPCNetWorker():
         #os.makedirs(self.tmp_dir, exist_ok=True)
         self.debug_mode = config['debug_mode']
 
-        self.phone2id = self.LoadDictionary(config['dict_path'])
+        self.phone2id = frontend.LoadDictionary(config['dict_path'])
 
         self.idim, odim, train_args = get_model_conf(config['acoustic_model_path'])
 
@@ -167,17 +170,27 @@ class TacotronLPCNetWorker():
     #     return sub_wav_path
 
     def Text2Speech(self, text, req_id):
-        mat = self.Frontend(text)
+
+        time_start = time.time()
+
+        # 1. front end
+        idseq = frontend.Frontend(self.phone2id, self.idim, text)
+        mat = torch.LongTensor(idseq).view(-1).to(device)
+        time_frontend = time.time()
+
+        # 2. acoustic model inference
         c, _, _ = self.model.inference(mat, self.inference_args)
-        f=c.cpu().detach().numpy()
+        features = c.cpu().detach().numpy()
 
         logging.info("{} Pass Acoustic Model".format(__file__))
+        time_acoustic = time.time()
 
         req_dir = os.path.join(self.tmp_dir, req_id)
 
         os.makedirs(req_dir, exist_ok=True)
 
-        f32_batch_path = self.SaveNPartAsF32(self.overlap, f, self.num_chunk_frame, req_dir, req_id)
+        # 3. vocoder
+        f32_batch_path = self.SaveNPartAsF32(self.overlap, features, self.num_chunk_frame, req_dir, req_id)
         logging.info("{} Save F32 Done".format(__file__))
 
         executor = ProcessPoolExecutor(max_workers=len(f32_batch_path))
@@ -198,57 +211,32 @@ class TacotronLPCNetWorker():
 
         if self.debug_mode:
             # numpy type feature
-            np.save(os.path.join(req_dir, req_id + "-feats.npy"), f)
+            np.save(os.path.join(req_dir, req_id + "-feats.npy"), features)
             # plot
             plt.figure()
-            plt.matshow(np.flip(f.T))
+            plt.matshow(np.flip(features.T))
             plt.savefig(os.path.join(req_dir, req_id + "-demo.png"), format="png")
             plt.close()
 
+        time_vocoder = time.time()
+
+        time_count_frontend = time_frontend - time_start
+        time_count_acoustic = time_acoustic - time_frontend
+        time_count_vocoder  = time_vocoder  - time_acoustic
+
+        logging.info("{} Acoustic:{:0.3f}s Vocoder:{:0.3f}s A+V: {:0.3f}s".format(
+            __file__, time_count_acoustic, time_count_vocoder, time_vocoder - time_start))
+
+
         return wav_path
 
-    def Frontend(self, text):
-        """Clean text and then convert to id sequence."""
-        idseq = []
-        T=re.split(r"",text)
-
-        for w in T:
-            if w == ' ':
-                w = "<space>"
-
-            if len(w) == 0:
-                continue
-            
-            if w not in self.phone2id.keys():
-                warnings.warn('%s => %s'%(w,w.lower()))
-                w = w.lower()
-                assert(w in phone2id.keys())
-                idseq += [self.phone2id[w]]
-            else:
-                idseq += [self.phone2id[w]]
-
-        idseq += [ self.idim - 1 ]  # <eos>
-
-        return torch.LongTensor(idseq).view(-1).to(device)
-
-    def LoadDictionary(self, dict_path):
-
-        logging.info("Load Dictionary: {}".format(dict_path))
-
-        with open(dict_path) as fp:
-            lines = fp.readlines()
-            lines = [ line.replace("\n", "").split(" ") for line in lines ]
-
-        phone2id = { c: int(i) for c, i in lines }
-
-        logging.info('Dictionary Size: {}'.format(len(phone2id)))
-
-        return phone2id
 
 if __name__ == "__main__":
 
     # code for test
-    logging.basicConfig(level=logging.DEBUG, format="%(levelname)8s %(asctime)s %(message)s ")
+    # log_level = logg.DEBUG
+    log_level = logg.INFO
+    logging.basicConfig(level=log_level, format="%(levelname)8s %(asctime)s %(message)s ")
     logging.info('Starting Up Tacotron LPCNet Worker')
 
     with open('config/config.yaml', 'r', encoding = 'utf-8') as fp:
