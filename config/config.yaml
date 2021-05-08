@@ -1,15 +1,16 @@
 url: /client/ws/tts
-port: 10000
+port: 10001
 tmp: temp_file
 torch_device: cpu
-debug_mode: False 
+debug_mode: False
 
-num_chunk_frame: 50
+num_chunk_frame: 40
 overlap: 10
 dict_path: models/espnet_taco_lpcnet_from_yizhou/train_units.txt
 threshold: 0.5
 minlenratio: 0.0
 maxlenratio: 10.0
+worker: worker2
 acoustic_model_path: models/espnet_taco_lpcnet_from_yizhou/results/model.last1.avg.best
 
 vocoder_path: LPCNet/lpcnet_demo

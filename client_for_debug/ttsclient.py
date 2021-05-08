@@ -55,7 +55,7 @@ class MyClient(WebSocketClient):
 
 
 def main():
-    url = 'ws://localhost:10000/client/ws/tts'
+    url = 'ws://localhost:10001/client/ws/tts'
     try:
         ws = MyClient(url)
         ws.connect()
