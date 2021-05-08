@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
     # code for test
     # log_level = logg.DEBUG
-    log_level = logg.INFO
+    log_level = logging.INFO
     logging.basicConfig(level=log_level, format="%(levelname)8s %(asctime)s %(message)s ")
     logging.info('Starting Up Tacotron LPCNet Worker')
 
