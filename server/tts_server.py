@@ -8,6 +8,8 @@
 # Acoustic Model: Tacotron2 trained by ESPNet
 # Vocoder Model: LPCNet
 
+''' tornado version must be 4.2 '''
+
 import sys
 from random import randint
 import logging
@@ -28,8 +30,6 @@ import tornado.concurrent
 # import common
 # import tornado.options
 #import tornado.gen
-
-# from worker import TacotronLPCNetWorker
 
 class WorkerLoop(threading.Thread):
     def __init__(self, application):
