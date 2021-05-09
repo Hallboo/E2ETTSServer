@@ -43,3 +43,4 @@ def LoadDictionary(dict_path):
     logging.info('Dictionary Size: {}'.format(len(phone2id)))
 
     return phone2id
+

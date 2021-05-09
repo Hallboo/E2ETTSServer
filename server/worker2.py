@@ -49,7 +49,8 @@ def run_vocoder(overlap, num_chunk_frame, tmp_dir, i, s1, s2, a1, a2, sub_feats)
     else:
         start = 0
 
-    logging.debug("{} LPCNet API {:2d} {:4d} {:4d} {:4d} {:4d} shape:{} start {:2d} dur {:2d}".format(
+    logging.debug(
+        "{} LPCNet API {:2d} {:4d} {:4d} {:4d} {:4d} shape:{} start {:2d} dur {:2d}".format(
         __file__, i, s1, s2, a1, a2, pcm.shape, start, duration))
 
     return (i, pcm[start:start+duration])
@@ -63,8 +64,8 @@ def Split(overlap, npy_feat, num_chunk_frame):
 
     sub_range = int(features.shape[0]/num_chunk_frame) + 1
 
-    logging.debug("{} num_frame:{} sub_range:{}".format(
-        __file__, features.shape[0], sub_range))
+    logging.debug(
+        "{} num_frame:{} sub_range:{}".format(__file__, features.shape[0], sub_range))
 
     # [ seg1(n1,55), seg2(n2,55), ... seg(N, 55) ]
     batch_feats = []
@@ -101,7 +102,7 @@ class TacotronLPCNetWorker():
         logging.info("Worker2 init start:")
 
         self.tmp_dir = config['tmp']
-        #os.makedirs(self.tmp_dir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         self.debug_mode = config['debug_mode']
 
         self.phone2id = frontend.LoadDictionary(config['dict_path'])

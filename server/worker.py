@@ -35,7 +35,7 @@ with open('config/config.yaml', 'r', encoding = 'utf-8') as fp:
 
 device = torch.device(config['torch_device'])
 
-def RunLPCNet(overlap, num_chunk_frame, vocoder_path, tmp_dir, sub_f32_path, req_id, sub_req_id, s1, s2):
+def ShellRunLPCNet(overlap, num_chunk_frame, vocoder_path, tmp_dir, sub_f32_path, req_id, sub_req_id, s1, s2):
 
     if s2 == s1 + overlap + num_chunk_frame + overlap:
         duration = num_chunk_frame
@@ -70,7 +70,7 @@ class TacotronLPCNetWorker():
     def __init__(self, config):
 
         self.tmp_dir = config['tmp']
-        #os.makedirs(self.tmp_dir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         self.debug_mode = config['debug_mode']
 
         self.phone2id = frontend.LoadDictionary(config['dict_path'])
@@ -157,17 +157,6 @@ class TacotronLPCNetWorker():
 
         return f32_batch_path
 
-    # def RunLPCNet(self, sub_f32_path, req_id, sub_req_id):
-
-    #     sub_pcm_path = os.path.join(self.tmp_dir, req_id, sub_req_id + "-wave.pcm")
-    #     sub_wav_path = os.path.join(self.tmp_dir, req_id, sub_req_id + "-wave.wav")
-
-    #     os.system("{} {} {}".format(self.vocoder_path, sub_f32_path, sub_pcm_path))
-    #     logging.info("{} Save file: {}".format(__file__, sub_pcm_path))
-    #     os.system("sox -c 1 -r 16000 -t sw {} -t wav {}".format(sub_pcm_path, sub_wav_path))
-    #     logging.info("{} Save file: {}".format(__file__, sub_wav_path))
-
-    #     return sub_wav_path
 
     def Text2Speech(self, text, req_id):
 
@@ -198,7 +187,7 @@ class TacotronLPCNetWorker():
 
         for sub_req_id, sub_f32_path, s1, s2 in f32_batch_path:
             futures.append(executor.submit(
-                partial(RunLPCNet, self.overlap, self.num_chunk_frame, self.vocoder_path,
+                partial(ShellRunLPCNet, self.overlap, self.num_chunk_frame, self.vocoder_path,
                 self.tmp_dir, sub_f32_path, req_id, sub_req_id, s1, s2)
             ))
 
@@ -227,15 +216,12 @@ class TacotronLPCNetWorker():
         logging.info("{} Acoustic:{:0.3f}s Vocoder:{:0.3f}s A+V: {:0.3f}s".format(
             __file__, time_count_acoustic, time_count_vocoder, time_vocoder - time_start))
 
-
         return wav_path
 
 
 if __name__ == "__main__":
 
-    # code for test
-    # log_level = logg.DEBUG
-    log_level = logging.INFO
+    log_level = logg.DEBUG
     logging.basicConfig(level=log_level, format="%(levelname)8s %(asctime)s %(message)s ")
     logging.info('Starting Up Tacotron LPCNet Worker')
 
@@ -246,9 +232,6 @@ if __name__ == "__main__":
         logging.info("Config {}: {}".format(k,v))
 
     worker = TacotronLPCNetWorker(config)
-    #worker.Text2Speech(
-    #    'SIL ni1 hao3 wo1 shi1 xiao3 ai4 tong2 xue2 SIL',
-    #    'test-test-test')
 
     logging.info("we would hope to make progress on that next year")
     worker.Text2Speech(
